@@ -10,6 +10,7 @@ module Twitter
     include Twitter::Utils
     # @return [Hash]
     attr_reader :attrs
+    attr_accessor :rate_limit
     alias to_h attrs
     alias to_hash to_h
 
@@ -24,6 +25,12 @@ module Twitter
       @options = request.options
       @collection = []
       self.attrs = request.perform
+      @rate_limit = {
+        limit: request.rate_limit.limit,
+        remaining: request.rate_limit.remaining,
+        reset_at: request.rate_limit.reset_at,
+        reset_in: request.rate_limit.reset_in,
+      }
     end
 
   private
@@ -48,7 +55,14 @@ module Twitter
 
     # @return [Hash]
     def fetch_next_page
-      response = Twitter::REST::Request.new(@client, @request_method, @path, @options.merge(next_page)).perform
+      request = Twitter::REST::Request.new(@client, @request_method, @path, @options.merge(next_page))
+      response = request.perform
+      @rate_limit = {
+        limit: request.rate_limit.limit,
+        remaining: request.rate_limit.remaining,
+        reset_at: request.rate_limit.reset_at,
+        reset_in: request.rate_limit.reset_in,
+      }
       self.attrs = response
     end
 
